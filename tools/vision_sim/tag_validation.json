@@ -1,0 +1,37 @@
+{
+  "dictionary": "DICT_APRILTAG_36h11",
+  "frame_layout": {
+    "scenes": 40,
+    "map_homography_scenes": 40,
+    "robot_tag_scenes": 40,
+    "pose_success": 40,
+    "pose_success_rate": 1.0,
+    "pose_error_mm_mean": 0.24,
+    "pose_error_mm_median": 0.22,
+    "pose_error_mm_p95": 0.45,
+    "heading_error_deg_mean": 0.26,
+    "heading_error_deg_median": 0.21,
+    "heading_error_deg_p95": 0.57
+  },
+  "oncard_layout_14mm": {
+    "scenes": 40,
+    "map_homography_scenes": 40,
+    "robot_tag_scenes": 40,
+    "pose_success": 40,
+    "pose_success_rate": 1.0,
+    "pose_error_mm_mean": 0.27,
+    "pose_error_mm_median": 0.28,
+    "pose_error_mm_p95": 0.45,
+    "heading_error_deg_mean": 0.23,
+    "heading_error_deg_median": 0.21,
+    "heading_error_deg_p95": 0.58
+  },
+  "dataset": {
+    "train": 140,
+    "val": 40
+  },
+  "notes": [
+    "Synthetic scenes use a perspective homography, not real lens distortion; calibrate the real camera before measuring.",
+    "The on-card 14 mm tags are tested at the same camera resolution; if their detection rate is poor, use the A2 frame with 36 mm tags."
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "dictionary": "DICT_APRILTAG_36h11",
+  "on_card": {
+    "image": "Untitled_tagged.png",
+    "sheet_mm": [
+      420.0,
+      297.0
+    ],
+    "image_px": [
+      4961,
+      3508
+    ],
+    "px_per_mm": 11.8119,
+    "tags": [
+      {
+        "id": 0,
+        "centre_px": [
+          367.0,
+          304.0
+        ],
+        "centre_mm": [
+          31.07,
+          25.74
+        ],
+        "marker_mm": 14.0,
+        "quiet_mm": 3.5,
+        "total_mm": 21.0
+      },
+      {
+        "id": 1,
+        "centre_px": [
+          4590.5,
+          304.0
+        ],
+        "centre_mm": [
+          388.66,
+          25.74
+        ],
+        "marker_mm": 14.0,
+        "quiet_mm": 3.5,
+        "total_mm": 21.0
+      },
+      {
+        "id": 2,
+        "centre_px": [
+          4590.5,
+          3204.0
+        ],
+        "centre_mm": [
+          388.66,
+          271.27
+        ],
+        "marker_mm": 14.0,
+        "quiet_mm": 3.5,
+        "total_mm": 21.0
+      },
+      {
+        "id": 3,
+        "centre_px": [
+          367.0,
+          3204.0
+        ],
+        "centre_mm": [
+          31.07,
+          271.27
+        ],
+        "marker_mm": 14.0,
+        "quiet_mm": 3.5,
+        "total_mm": 21.0
+      }
+    ]
+  },
+  "frame": {
+    "image": "tools/vision_sim/map_frame_A2.png",
+    "frame_mm": [
+      560.0,
+      417.0
+    ],
+    "a3_origin_mm": [
+      70.0,
+      60.0
+    ],
+    "a3_size_mm": [
+      420.0,
+      297.0
+    ],
+    "print": "A2 landscape (594 x 420 mm) at 100%",
+    "tags": [
+      {
+        "id": 0,
+        "centre_mm": [
+          30.0,
+          30.0
+        ],
+        "centre_px": [
+          354.3,
+          354.3
+        ],
+        "marker_mm": 36.0,
+        "quiet_mm": 7.0,
+        "total_mm": 50.0
+      },
+      {
+        "id": 1,
+        "centre_mm": [
+          530.0,
+          30.0
+        ],
+        "centre_px": [
+          6259.8,
+          354.3
+        ],
+        "marker_mm": 36.0,
+        "quiet_mm": 7.0,
+        "total_mm": 50.0
+      },
+      {
+        "id": 2,
+        "centre_mm": [
+          530.0,
+          387.0
+        ],
+        "centre_px": [
+          6259.8,
+          4570.9
+        ],
+        "marker_mm": 36.0,
+        "quiet_mm": 7.0,
+        "total_mm": 50.0
+      },
+      {
+        "id": 3,
+        "centre_mm": [
+          30.0,
+          387.0
+        ],
+        "centre_px": [
+          354.3,
+          4570.9
+        ],
+        "marker_mm": 36.0,
+        "quiet_mm": 7.0,
+        "total_mm": 50.0
+      }
+    ]
+  },
+  "robot_tag": {
+    "id": 10,
+    "marker_mm": 36.0,
+    "quiet_mm": 7.0,
+    "total_mm": 50.0,
+    "mount": "flat on the robot top, tag +x axis pointing forward"
+  },
+  "notes": [
+    "Map coordinates use the image convention: +x right, +y down, origin at the A3 top-left.",
+    "The on-card tags are convenient but their white quiet zones interrupt the black border; use them only if the camera raster replaces border-following.",
+    "The A2 frame is recommended: tags are outside the A3, larger, and do not disturb the printed surface or its border."
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "status": "smoke_test_stopped_after_epoch_1",
+  "reason": "CPU contention; a full 3-epoch run was estimated at ~30 minutes and was stopped. The checkpoint save also stalled at 0 bytes.",
+  "epochs_completed": 1,
+  "configured_epochs": 3,
+  "imgsz": 192,
+  "train_images": 42,
+  "val_images": 40,
+  "freeze_layers": 10,
+  "precision": 0.302,
+  "recall": 0.55,
+  "map50": 0.302,
+  "map50_95": 0.117,
+  "weights": "none (no usable checkpoint was written)",
+  "conclusion": "The synthetic dataset and training pipeline run, but 1 epoch on 42 images is not a usable detector. Train on a GPU with the full dataset, fewer frozen layers and many more epochs. Use the AprilTag pose for control meanwhile.",
+  "notes": [
+    "Synthetic validation is easy compared with real camera frames; real accuracy requires real images, lighting and lens calibration.",
+    "A plain YOLO box has no reliable heading; use the robot tag for heading or train an OBB model.",
+    "The AprilTag pipeline detected 40/40 scenes at both layouts with sub-millimetre synthetic pose error."
+  ]
+}

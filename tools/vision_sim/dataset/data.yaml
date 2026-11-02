@@ -1,0 +1,8 @@
+{
+  "path": "C:\\Users\\V9\\OneDrive - UWE Bristol\\Apps\\semt0043\\tools\\vision_sim\\dataset",
+  "train": "images/train",
+  "val": "images/val",
+  "names": {
+    "0": "robot"
+  }
+}
