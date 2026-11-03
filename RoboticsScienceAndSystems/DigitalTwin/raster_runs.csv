@@ -1,2 +1,0 @@
-map,spacing_mm,lane_count,cruise_pwm,footprint_mm,noise_dn,pose_error_pct,fusion,estimator,control,map_scale_pct,fade,placement,coverage_pct,rmse,mae,elapsed_s,readings
-surface,7.91,44,120.0,1.00,0.0,0.0,on,ekf/analytic,P,100,235/1.000,bilinear,56.91,60.54,17.75,155.99,76860
