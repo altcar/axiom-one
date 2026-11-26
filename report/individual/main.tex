@@ -1,0 +1,111 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage{cw2026-report}
+
+\newcommand{\ReportTitle}{Sensor footprint and channel matching}
+\newcommand{\ReportSubtitle}{What the reflectance array can resolve, and what the twin must model}
+
+\newcommand{\StudentID}{[7-digit student ID]}
+
+\begin{document}
+\ReportHeader
+
+\begin{multicols*}{2}
+\raggedcolumns
+
+\section*{Subsystem and investigation aim}
+Our 3Pi+ scans a printed sheet row by row and rebuilds a picture from the five
+downward-facing reflectance sensors. Each reading is the time in microseconds for
+a capacitor to discharge through a phototransistor, so a bright surface returns a
+short time and dark ink a long one. New snapshots arrive every 10\,ms.
+
+This report characterises the array's spatial footprint and its channel-to-channel
+matching, because both are missing from the digital twin and neither can be
+inferred from the controller. The question is what spatial and tonal resolution
+the real array delivers at the settings we scan with, and what the twin must
+represent to match it.
+
+\section*{Measurement approach}
+Three measurements were taken. The robot was stationary and the surface was the
+A3 test sheet unless stated.
+
+\textbf{Geometry.} Each channel's position was read from a photograph of the
+underside against a rule, relative to the wheel-axle centre. The measured offsets
+are 28 to 41\,mm ahead and within 27\,mm of the centre line, for DN1 to DN5, with
+$\pm$2\,mm uncertainty from pixel resolution and parallax.
+
+\textbf{Response.} The array was placed over plain white paper and over solid
+black ink, and the per-channel times were read from the 10\,ms snapshot stream.
+White gives about 400\,$\mu$s and black about 2000\,$\mu$s, the direction expected
+from brighter reflection. Two prints bound the usable range but cannot establish
+linearity, and they say nothing about saturation, so the midpoint, 1200\,$\mu$s, is
+reported as the midpoint of the range and not as a calibrated 50 percent tone.
+
+\textbf{Footprint.} The footprint is the weakest of the three measurements. Each
+reading averages the paper under the channel, so a printed edge comes back
+softened. We chose the Gaussian width $\sigma$ that, when used to deblur our scans,
+removed the softening without ringing, and halos appeared above about 4\,mm. That
+gives $\sigma\approx3$\,mm with a plausible range of 2 to 4\,mm. It is an estimate
+from the artefact it explains, not an independent measurement.
+
+\ReportPlot{fig_sensor.pdf}{Measured sensor geometry and response}
+{Left, measured channel positions relative to the axle centre, $\pm$2\,mm, with
+the estimated 3\,mm spot drawn to scale and the 13\,mm fore-aft stagger marked.
+Right, measured discharge time against printed brightness. The two prints bound
+the range and do not establish a linear response.}
+{fig:sensor}
+
+\section*{Results and interpretation}
+The array spans 54\,mm laterally and 13\,mm fore and aft. The stagger matters.
+A channel 13\,mm ahead of another samples a different part of the sheet, so the
+five channels interlace rather than share a row, and a rebuild that treats them as
+co-located shifts every feature by 13\,mm, which is nearly twice the 7\,mm row
+pitch we scan with.
+
+At $\sigma=3$\,mm the width from 10 to 90 percent of an edge is
+$2.56\times3\approx7.7$\,mm. That is 1.1 times our row pitch and 27 times the
+0.28\,mm encoder resolution. The honest reading is that the spot and the row
+spacing are comparable, so vertical resolution is set by both together and this
+measurement alone cannot say which dominates. It does explain why a printed
+triangle comes back as a soft mound, since its corners are comparable to the spot.
+At $\sigma=2$\,mm the width would be 5.1\,mm and at 4\,mm, 10.2\,mm, so the
+estimate of $\sigma$ dominates the uncertainty.
+
+The tonal result is weaker and is reported as such. Between 400 and 2000\,$\mu$s
+the two prints give a straight line, which is not evidence of a linear sensor. Our
+rebuilds with a single shared brightness range show stripes on uniform paper, which
+is direct evidence that the channels differ in offset and gain. We have not
+quantified those differences, so the model's assumption of five identical channels
+is known to be wrong but not yet replaced by measured values.
+
+\section*{Implications for the digital twin}
+The twin treats each channel as a point sensor with identical levels. Two changes
+follow from the evidence. Each channel should be a Gaussian spot of width $\sigma$
+at its measured offset, with its own white and black times. The offset part is
+supported by the stripes. The $\sigma$ part is supported only by the deblur
+estimate, so it should be implemented as a parameter with a stated range rather
+than a fixed number.
+
+The consequence of leaving them out is systematic, not random. A point-sensor twin
+produces edges sharper than the robot can and rewards a finer row pitch than the
+array can use, so scan settings chosen in simulation will underperform at the
+bench.
+
+A suitable check needs an observation not used for the fit. Scan one straight
+black and white edge at three speeds and measure the width from 10 to 90 percent.
+The footprint is fixed while any delay grows with speed, so a constant width
+confirms the 3\,mm $\sigma$ and a growing width shows that delay dominates. A
+printed step wedge, measured with repeats, would then give a gain and an offset per
+channel.
+
+\EvidenceNote{Measurements and processing are in
+\texttt{ModelParameters.pde}, which holds the channel offsets,
+\texttt{sensorFootprintSigmaMm} and the white and black times, and in the scan
+logs exported by the dashboard, which carry \texttt{dn1} to \texttt{dn5} at
+100\,Hz. The deblur fit and the sensor-position table are in the dashboard Image
+settings panel. The knife-edge and step-wedge tests have not been run.
+References: [1] G.~D. Boreman, \emph{Modulation Transfer Function}, SPIE Press,
+2001, ch.~3. [2] Pololu, \emph{QTR RC-type sensor application note},
+pololu.com/docs/0J13.}
+
+\end{multicols*}
+\end{document}

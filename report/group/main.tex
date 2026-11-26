@@ -1,0 +1,335 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage{lmodern}
+\usepackage{cw2026-paper}
+\usepackage[italic]{mathastext}
+
+% A short, specific title: identify the behaviour and the investigation.
+\newcommand{\PaperTitle}{Sensor footprint and wheel calibration limits on raster-scan image fidelity}
+
+% Replace each placeholder with a seven-digit student number.
+\newcommand{\StudentNumbers}{[7-digit student ID]\quad
+  [7-digit student ID]\quad [7-digit student ID]\quad [7-digit student ID]}
+
+\begin{document}
+\PaperTitleBlock
+
+\begin{multicols*}{2}
+\raggedcolumns
+
+\section{Introduction}
+A small differential-drive robot carries five reflectance sensors that look at
+the floor. It drives up and down the sheet in a coverage pattern~\cite{choset} and
+rebuilds a picture from the darkness of each reading. The encoders say where a reading was taken. The
+sensors say how dark the paper was. Together they produce the image that the
+task is judged on, as Figure~\ref{fig:setup} shows. The digital twin runs the
+same controller against a model of the same sheet at one pixel per millimetre.
+We use the twin to choose scan settings, so its fidelity matters in practice. A
+twin that overstates which features survive recommends settings that
+underperform at the bench.
+
+Two explanations are available. The first is optical. Each sensor averages the
+paper over a finite spot, so edges must be softened~\cite{richardson,lucy}. The
+second is geometric. Encoder odometry drifts because the controller's model of
+the wheels is not the robot's~\cite{borenstein,thrun}, so samples are deposited
+in the wrong place.
+
+\begin{quote}
+\small\textbf{Question.} At a row pitch of 7\,mm and a pulse-width command of 30,
+which of three things limits the fidelity of the rebuilt image, the sensor's
+footprint, the row pitch we choose, or the controller's belief about wheel
+separation?
+\end{quote}
+
+We predicted three things. The footprint sets a resolution floor of a few
+millimetres. A row pitch below that floor buys nothing. A geometry error large
+enough to be measured on the robot costs more fidelity than either.
+
+\PaperFigure[42mm]{figures/fig_setup.pdf}{}{}%
+{The printed sheet and the path. Rows are straight and the transitions between
+them are curved, so the robot follows one continuous zigzag and never turns on
+the spot. The axle starts on the cross facing $+x$. The five sensors sit 28 to
+41\,mm ahead of the axle and within 27\,mm of the centre line, and each reading
+is deposited at that sensor's position.}
+{fig:setup}
+
+\section{Implementation}
+The robot is driven by a state machine clocked at 100\,Hz, and
+Figure~\ref{fig:flow} shows its logic. A scan starts from rest. The encoders are
+zeroed and the robot settles for 300\,ms, so every run begins from the same
+pose. Each row is then driven with a 300\,ms ramp. A heading hold with a gain of
+60 PWM per radian and a clamp of plus or minus 15 PWM keeps the robot pointing
+along the row, and a slower lane controller steers back onto the row line,
+\begin{equation}
+  \psi^\star = \psi_r + d\,\arctan\!\left(\frac{y_r-y}{L}\right),
+  \qquad |\psi^\star-\psi_r|\le 0.45\ \text{rad},
+  \label{eq:steer}
+\end{equation}
+where $\psi_r$ is the row heading, either 0 or $\pi$, $d$ is plus or minus one
+for the direction of travel, $y$ is the estimated lateral position and $L$ is a
+lookahead of 35\,mm. The lane change is spread over the 50\,mm run-in past each
+end of the image, so the robot never turns on the spot. The shape is deliberate.
+An in-place turn leaves a heading error that the next row inherits, and on our
+robot the scrub was large enough that turning rows arrived between 5 and 32\,mm
+apart when 14 was commanded. A curved transition spends the same steering budget
+over 50\,mm and never stops, so every row starts from a corrected heading.
+
+\PaperFigure[54mm]{figures/fig_flow.pdf}{}{}%
+{State diagram of the controller. Rows alternate direction without turning. The
+run-in past each end of the image is where the robot steers onto the next row
+line. A 30\,s guard stops the robot and reports a fault if a row makes no
+progress.}
+{fig:flow}
+
+\subsection*{To recreate one scan}
+\begin{enumerate}
+\setlength{\itemsep}{0pt}
+\item Print the A3 sheet at 100 percent and tape all four corners flat.
+\item Put the robot on the start cross, facing the arrow, with the image to its
+left.
+\item Set the scan to 17 rows, 160\,mm rows, 7\,mm pitch and command 30.
+\item Press the button once. The robot waits 1\,s, then scans and stops.
+\item Press Download CSV on the dashboard before the ring buffer fills.
+\item Load that CSV into the twin and press S. The twin scans the same sheet
+with the same controller.
+\end{enumerate}
+
+Two values matter most. The 7\,mm pitch is three quarters of the 9\,mm spacing
+between the middle sensors, so neighbouring rows interleave. The 50\,mm run-in
+gives the lane controller time to settle before the image starts, which is what
+keeps the rows parallel without a turn.
+
+Two parameter sets are used. \emph{Nominal} is the template's ideal robot, with
+point sensors on a symmetric arc, 90\,mm separation, no deadband and no lag.
+\emph{Calibrated} uses our measured separation of 82.5\,mm, a gain that gives the
+58\,mm\,s$^{-1}$ we measured at command 30, the measured sensor offsets and a
+3\,mm footprint. The controller's beliefs about the wheels are set apart from the
+physics, so a real odometry error is reproduced instead of simulated away.
+
+\section{Experimental method}
+\subsection*{Variables and conditions}
+Table~\ref{tab:variables} lists what was varied, what was measured and what was
+held fixed. Each condition was repeated ten times. In the twin a repeat differs
+only through the placement error of 1\,mm and the start-heading error of
+0.5$^\circ$ applied to the true pose. The sheet, the path, the speed and the
+sensor model were held fixed. Battery state was held roughly constant by
+charging before each session.
+
+\begin{minipage}{\linewidth}
+\captionof{table}{Experiment variables. Every twin condition uses the calibrated
+parameter set unless stated. Each row has $n=10$ runs.}
+\label{tab:variables}
+\small
+\renewcommand{\arraystretch}{1.1}
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{@{}p{17mm}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Type} & \textbf{Description} \\
+\midrule
+Independent & Row pitch 5, 7, 10, 13.5 and 20\,mm, with rows adjusted so the
+scanned height stays 112\,mm. Belief about wheel separation 82.5 to 90\,mm,
+which is 0 to 9.1\,\% of the true value. Sensor footprint $\sigma$ from 0 to
+5\,mm, run at 3\,mm pitch. U-turn runs at 14\,mm pitch with rotation efficiency
+from 0.8 to 1.0. \\
+\addlinespace[3pt]
+Dependent & Image error $E$ in percent. Coverage $C$ in percent. Pose error $e$
+in mm. Edge width $w$ in mm. Row-centre spacing in mm. \\
+\addlinespace[3pt]
+Controlled & Sheet, $160\times112$\,mm area, 7\,mm pitch unless varied, command
+30, 50\,mm run-in, 300\,ms settle, 100\,Hz control, sensor offsets. \\
+\bottomrule
+\end{tabularx}
+\end{minipage}
+
+\subsection*{Metrics}
+Let $\hat{I}$ be the rebuilt image and $S$ the sheet, both scaled to $[0,1]$, and
+let $P$ be the set of pixels that received at least one sample. Image error,
+coverage and pose error are then
+\begin{align}
+  E&=\frac{100}{|P|}\sum_{p\in P}\left|\hat{I}(p)-S(p)\right|,\label{eq:metrics}\\
+  C&=100\,\frac{|P|}{|P_A|},\qquad
+  e_k=\left\|\hat{\mathbf{q}}_k-\mathbf{q}_k\right\|,\nonumber
+\end{align}
+where $|P_A|$ is the nominal scan area in pixels, and $\hat{\mathbf{q}}_k$ and
+$\mathbf{q}_k$ are the estimated and true sensor positions of sample $k$. $E$
+answers how much of the picture is wrong. $C$ answers how much of it exists.
+$e_k$ is reported as a mean $\bar{e}$ and a maximum $e_{\max}$ because a small
+bias and a large excursion have different consequences.
+
+Edges are characterised by their width from 10 to 90 percent of the transition.
+If the sensor is a Gaussian spot of standard deviation $\sigma$ and the rebuild
+deposits each reading with a Gaussian of width $s$, a step edge returns as an
+error function and the width is
+\begin{equation}
+  w = 2.563\sqrt{\sigma^2+s^2} ,
+  \label{eq:edge}
+\end{equation}
+with $s=1$\,mm for our rebuild. This is the line-spread relation used to turn a
+measured edge into a footprint estimate~\cite{boreman}. A trial counts as complete if the state machine reaches the end.
+No trial failed.
+
+\subsection*{Procedure and analysis}
+A trial resets the pose, waits 1\,s, scans and stops. The twin writes one file
+of pose, five sensor channels and state per sample, plus an image of the
+rebuild. The analysis is a script over those files. The robot contributes
+characterisation values instead of scored scans. These are wheel separation from
+a calibrated U-turn, 82.5\,mm against the template's 90\,mm, speed from scan
+logs, and row spacing measured with a rule after U-turn runs.
+
+\section{Results}
+Figure~\ref{fig:path} shows the path the twin drove, Figure~\ref{fig:simreal}
+compares the twin with the robot, Figure~\ref{fig:pitch} varies the row pitch and
+Figure~\ref{fig:sigma} varies the sensor footprint.
+
+\PaperFigure[36mm]{figures/fig_path.pdf}{}{}%
+{The executed path of one twin scan, coloured by row. Rows are straight and each
+end is a smooth transition in the run-in, so no row begins with a turn.}
+{fig:path}
+
+The template twin scores 15.2 percent with a spread of 4.2 in 123\,s, and the
+calibrated twin 20.6 with a spread of 1.0 in 86\,s. They differ in six parameters,
+so the gap of 5.4 points is a size and not a cause. A two by two comparison
+separates two of them. No footprint with a correct belief gives 13.3.
+Adding only the footprint gives 20.9. Adding only the template belief of 90\,mm
+gives 21.2. Both give 25.2. The footprint is worth 5.8 points and the belief 6.1,
+and the interaction is minus 3.6, so the two errors overlap.
+
+% REAL-SCAN-BEGIN
+% REAL-SCAN-END
+
+\PaperFigure[56mm]{figures/fig_simreal.pdf}{}{}%
+{The twin against the robot. The upper panel plots pose error against the
+odometry model's wheel-separation error, with $n=10$, shading of one standard
+deviation and the measured 7.5\,mm marked. The lower panel plots row-centre
+spacing for the same 14\,mm command, with the band measured on the robot.}
+{fig:simreal}
+
+In the upper panel the mean pose error grows from 1.6 to 5.1\,mm and the maximum
+from 2.2 to 10.2\,mm over 0 to 9.1 percent belief error, a fourfold rise in the
+maximum, while the image error rises from 21.0 to 25.2 percent. Growth is flat to
+3.6 percent and then accelerates. Our measured 7.5\,mm sits at the top of the
+curve, which predicts 4 to 5\,mm of mean error and maxima near 10\,mm, larger than
+the 7\,mm pitch. In the lower panel the twin gives one line at $14.2\pm0.4$\,mm
+with no slip and two bands near 29 and 32\,mm with 5 percent slip, while the robot
+spans 5 to 32\,mm. No single efficiency reproduces that spread, and the twin
+cannot go below 14\,mm.
+
+\PaperFigure[46mm]{figures/fig_pitch.pdf}{}{}%
+{Image error against row pitch, with $n=10$ per point. Blue scores only measured
+pixels, red scores the whole target and counts unmeasured area as wrong. Bars are
+one standard deviation. The lower panel gives coverage, with scan times.}
+{fig:pitch}
+
+Pitch matters only if the missing area counts. On measured pixels the error is
+flat, 20.4 to 22.2 percent from 5 to 20\,mm, while coverage falls from 99.8 to
+75.6 percent and time from 117 to 34\,s. On the whole target the same runs rise
+from 21.3 to 39.8 percent. The metric divides by the pixels that received a
+sample, so a quarter of the image is excluded at 20\,mm, and the target rectangle
+is also shorter. For a task that must reproduce the sheet, the red series is the
+honest one.
+
+\PaperFigure[46mm]{figures/fig_sigma.pdf}{}{}%
+{Sensor footprint against edge sharpness at 3\,mm pitch, with $n=10$. The upper
+panel gives measured edge width, Equation~\ref{eq:edge} and image error. The band
+is our robot's 3\,mm footprint, which is a calibration input. Below, the triangle
+at three footprints.}
+{fig:sigma}
+
+The edge width grows from 2.6 to 11.7\,mm as the footprint goes from 0 to 5\,mm.
+Equation~\ref{eq:edge} predicts 8.1\,mm at 3\,mm and 13.1 at 5\,mm, against 7.7
+and 11.7 measured, so the spot is not perfectly Gaussian. The image error rises
+from 14.8 to 25.0 percent.
+
+The U-turn runs show the metric failing. From efficiency 1.0 to 0.8 the mean pose
+error grows from 2 to 247\,mm, yet the image error peaks at 39.3 percent at 0.98
+and falls to 30.8. Each channel is rescaled to its own range and the error counts
+only covered cells, so a scan that sees little is stretched and judged on what it
+reached.
+
+\section{Discussion and conclusion}
+\subsection*{Interpretation}
+On measured pixels the footprint costs 5.8 points and the belief 6.1, and pitch
+costs nothing. On the whole target pitch costs 18.5. The ranking depends on the
+metric, and only the whole-target one matches the task. If the robot must deliver
+a picture, the missing quarter is error, and pitch is the largest effect.
+
+The prediction was half right. The footprint sets a floor of about 8\,mm, but
+geometry does not cost more than pitch. The twin is optimistic in a narrower sense
+than we claimed. An ideal sensor scores 15.2 against 20.6 for the calibrated twin,
+even though the template also has the wrong belief, so that score says what an
+ideal sensor can see and not what the bench will do.
+
+Two alternatives remain. The flat curve could be saturation, since detail between
+1 and 3\,mm is already lost. The robot's spread could be placement error, which a
+rule cannot separate.
+
+The trade-off is explicit. Seven millimetres gives 99.8 percent coverage in 86\,s.
+Ten millimetres gives 92.5 percent in 60\,s, with the same error, 21.0 against 21.5,
+and a lower pose error, 1.2 against 2.1. If 92.5 percent is enough, 10 wins. We
+chose 7 because the task is to reproduce the sheet.
+
+\subsection*{Limitations and next experiment}
+The limitation that most affects confidence is that the real side is a parameter
+set, not a scored scan. No rebuild from the robot is scored anywhere here, so the
+5.4-point difference is model to model. It shows how far the model moves when the
+template is replaced. It does not show how far either is from the bench.
+
+Three limits qualify the numbers. The repeats are rigid re-registrations of one
+deterministic scan, since only the start pose is randomised, so the bars measure
+sensitivity to placement. Several calibrated parameters, including the gain and
+the footprint, are estimates. And the error metric averages over a population that
+changes with the condition.
+
+The next experiment follows directly. Scan the sheet three times with the robot and
+score each log with the same rebuild. That turns the model-to-model gap into a
+model-to-data gap. A black and white edge at three speeds would then separate the
+footprint from the delay, which is currently zero.
+
+\subsection*{Conclusion}
+The reconstruction is limited by three things at different scales. On the pixels
+sampled, the spot costs 5.8 points and the wheel belief 6.1. Across the whole
+target, pitch costs 18.5 because it decides how much is sampled. The twin's default
+metric hides the second, so a twin used to choose settings should score the full
+target. The robot is harder than its twin in a way the twin cannot show. Its row
+spacing spreads from 5 to 32\,mm where the model gives a line.
+
+\newpage
+\section*{Evidence and sources}
+Twin runs are in \texttt{all\_runs.csv}, with 300 rows and one row per twin run,
+written by \texttt{run\_experiments.py}. It holds every condition used here,
+including the full U-turn sweep from 0.8 to 1.0 and the interaction cell with no
+footprint and the template belief. Per-run samples are in
+\texttt{exp/<condition>/runs/} and the rebuilds are in the matching
+\texttt{.png} files. The figures are produced by \texttt{analyse.py}, which reads
+only those files. The twin source is \texttt{DigitalTwin/}, where
+\texttt{ModelParameters.pde} holds the nominal and the calibrated sets. The robot
+firmware is in \texttt{Controller.cpp}, \texttt{ScanLog.cpp} and
+\texttt{dashboard/dashboard.html}. The headless driver used to batch the twin is
+\texttt{merge.py} plus a batch tab, and it does not change the behaviour of the
+sketch. Measured robot values are recorded in \texttt{ModelParameters.pde} and in
+the repository README. The twin is written in Processing~\cite{processing}.
+
+\renewcommand{\refname}{}
+\begin{thebibliography}{9}
+\small
+\bibitem{richardson} W.~H. Richardson, ``Bayesian-based iterative method of image
+restoration,'' \emph{J. Opt. Soc. Am.} \textbf{62}(1), 55--59, 1972.
+\bibitem{lucy} L.~B. Lucy, ``An iterative technique for the rectification of
+observed distributions,'' \emph{Astron. J.} \textbf{79}(6), 745--754, 1974.
+\bibitem{borenstein} J.~Borenstein and L.~Feng, ``Measurement and correction of
+systematic odometry errors in mobile robots,'' \emph{IEEE Trans. Robotics
+Autom.} \textbf{12}(6), 869--880, 1996.
+\bibitem{thrun} S.~Thrun, W.~Burgard and D.~Fox, \emph{Probabilistic Robotics},
+MIT Press, 2005, ch.~5.
+\bibitem{choset} H.~Choset, ``Coverage for robotics, a survey of recent
+results,'' \emph{Ann. Math. Artif. Intell.} \textbf{31}, 113--126, 2001.
+\bibitem{boreman} G.~D. Boreman, \emph{Modulation Transfer Function in Optical
+and Electro-Optical Systems}, SPIE Press, 2001, ch.~3.
+\bibitem{tao} F.~Tao, H.~Zhang, A.~Liu and A.~Y.~C. Nee, ``Digital twin in
+industry, state of the art,'' \emph{IEEE Trans. Ind. Informat.}
+\textbf{15}(4), 2405--2415, 2019.
+\bibitem{processing} Processing Foundation, \emph{Processing 4 reference},
+processing.org, accessed 2026.
+\end{thebibliography}
+
+\end{multicols*}
+\end{document}
