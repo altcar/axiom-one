@@ -10,18 +10,55 @@ for hardware.
 ## What is in here
 
 ```
-firmware/SensorTests/   full Arduino sketch, template files plus a new Controller
+firmware/ImageRaster/   the working scan firmware, copied unmodified from
+                        github.com/saintbridgethefirst/IMAGERASTER.
+                        Includes ScanLog, WebDashboard and dashboard_html.h,
+                        so the WiFi dashboard works as it does in that repo.
+firmware/SensorTests/   characterisation tests, template files plus a new Controller
 host/capture_serial.py  USB serial to CSV
 host/analyse.py         offset, noise, step, edge, straight and spin analysis
+host/score_scan.py      scores a dashboard or twin CSV against the sheet
 ```
+
+Two sketches, two jobs. `ImageRaster` is the robot as you built it: it scans,
+logs to a ring buffer, and serves the dashboard on port 8080 so a browser can
+download the CSV and rebuild the image. `SensorTests` is for the individual
+report: offset, noise, step, edge, straight and spin, printed over USB.
+
+I did not write or modify the dashboard. `ImageRaster/` is a byte-for-byte copy
+of your firmware, and the dashboard in it is the one you wrote. Rebuild
+`dashboard_html.h` from `dashboard/dashboard.html` with
+`python3 dashboard/make_header.py` if you edit the page.
 
 ## Upload
 
+Both sketches use the same board settings.
+
 1. Arduino IDE with the M5Stack board package, `LSM6` and `LIS3MDL` libraries.
-2. Open `firmware/SensorTests/SensorTests.ino`. The folder and the `.ino` already
+2. Open the sketch. `firmware/ImageRaster/ImageRaster.ino` or
+   `firmware/SensorTests/SensorTests.ino`. Each folder and its `.ino` already
    share a name, which Arduino requires.
 3. Tools, Board, M5StampC3. Tools, USB-CDC On Boot, Disabled. Upload speed 115200.
 4. Connect USB-C and upload.
+
+For the dashboard, set your own WiFi name and password in `ImageRaster.ino`,
+upload, join that network, and open `http://192.168.4.1:8080`.
+
+## Get a scan off the robot, two ways
+
+Dashboard, the way you already work:
+
+```sh
+# join the robot's WiFi, then
+curl -s "http://192.168.4.1:8080/data" > data/scan_raw.csv
+python3 host/score_scan.py data/scan_raw.csv --sheet surface.png
+```
+
+USB, for the SensorTests sketch:
+
+```sh
+python3 host/capture_serial.py --port /dev/ttyACM0 --out data/offset.csv
+```
 
 ## Choose a test
 
