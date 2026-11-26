@@ -6,12 +6,10 @@ Three-page scientific report plus the data and code needed to reproduce it.
 |---|---|
 | `group/` | Assessment 2: `main.tex`, `main.pdf`, `report.md`, `figures/` and an Overleaf zip. |
 | `individual/` | Assessment 1: 1-page `main.tex`, `main.pdf`, figure and an Overleaf zip. |
-| `tools/` | Runnable tests: `capture_scan.sh`, `score_scan.py`, `knife_edge.py`, `write_real_values.py`. |
-| `RUN_TESTS.md` | The ordered test plan, with the exact commands and what each test updates. |
+| `real_robot/` | Uploadable firmware and host scripts that measure the actual robot. See its own README. |
 | `data/all_runs.csv` | 300 twin runs, one row each. |
 | `data/twin_data.zip` | Every per-run CSV and rebuild PNG. |
 | `pipeline/` | The twin batch driver and the figure scripts: `merge.py`, `run_experiments.py`, `analyse.py`, `make_flow.py`, `make_simreal.py`. |
-| `surface.png` | The test sheet at 1 px per millimetre, needed by `score_scan.py`. |
 | `TALKING_POINTS.md` | One paragraph per section, for a viva. |
 
 ## Where the numbers come from
